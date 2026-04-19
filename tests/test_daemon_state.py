@@ -11,7 +11,10 @@ from clangd_probe.daemon_state import (
     daemon_socket_path,
     encode_request,
     decode_message,
+    load_metadata,
     metadata_is_live,
+    remove_runtime_files,
+    write_metadata,
 )
 
 
@@ -39,3 +42,27 @@ def test_metadata_is_live_accepts_current_process(tmp_path):
     socket_path.write_text("", encoding="utf-8")
     metadata = {"pid": os.getpid(), "socket_path": str(socket_path)}
     assert metadata_is_live(metadata) is True
+
+
+def test_owner_aware_cleanup_does_not_remove_other_daemon_runtime(tmp_path):
+    socket_path = daemon_socket_path(tmp_path)
+    socket_path.write_text("", encoding="utf-8")
+    metadata = {"pid": 123, "socket_path": str(socket_path)}
+    write_metadata(tmp_path, metadata)
+
+    remove_runtime_files(tmp_path, owner_pid=999)
+
+    assert socket_path.exists()
+    assert load_metadata(tmp_path) == metadata
+
+
+def test_owner_aware_cleanup_removes_matching_daemon_runtime(tmp_path):
+    socket_path = daemon_socket_path(tmp_path)
+    socket_path.write_text("", encoding="utf-8")
+    metadata = {"pid": 123, "socket_path": str(socket_path)}
+    write_metadata(tmp_path, metadata)
+
+    remove_runtime_files(tmp_path, owner_pid=123)
+
+    assert not socket_path.exists()
+    assert load_metadata(tmp_path) is None

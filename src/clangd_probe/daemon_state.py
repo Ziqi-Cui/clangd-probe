@@ -62,7 +62,11 @@ def write_metadata(project_root, payload: dict[str, object]) -> Path:
     return path
 
 
-def remove_runtime_files(project_root) -> None:
+def remove_runtime_files(project_root, owner_pid: int | None = None) -> None:
+    if owner_pid is not None:
+        metadata = load_metadata(project_root)
+        if metadata is not None and metadata.get("pid") != owner_pid:
+            return
     for path in (daemon_socket_path(project_root), daemon_metadata_path(project_root)):
         try:
             path.unlink()

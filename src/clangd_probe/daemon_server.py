@@ -51,11 +51,12 @@ class DaemonServer:
     def _prepare_runtime(self):
         self.socket_path.parent.mkdir(parents=True, exist_ok=True)
         remove_runtime_files(self.project_root)
+        owner_pid = os_getpid()
         self.discovery = discover(project=self.project_root, compdb=self.explicit_compdb, profile=self.profile)
         write_metadata(
             self.project_root,
             {
-                "pid": os_getpid(),
+                "pid": owner_pid,
                 "project_root": str(self.project_root),
                 "socket_path": str(self.socket_path),
                 "active_compdb": str(self.discovery.active_compdb) if self.discovery.active_compdb else None,
@@ -63,11 +64,11 @@ class DaemonServer:
                 "adapter": self.discovery.adapter,
             },
         )
-        atexit.register(remove_runtime_files, self.project_root)
+        atexit.register(remove_runtime_files, self.project_root, owner_pid)
 
     def _install_signal_handlers(self):
         def _cleanup_and_exit(signum, frame):
-            remove_runtime_files(self.project_root)
+            remove_runtime_files(self.project_root, os_getpid())
             raise SystemExit(0)
 
         signal.signal(signal.SIGTERM, _cleanup_and_exit)

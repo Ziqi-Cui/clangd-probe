@@ -46,6 +46,20 @@ def _project_root(args, context: ExecutionContext) -> Path:
     return Path.cwd()
 
 
+def _apply_metadata_context(context: ExecutionContext, metadata: dict[str, object] | None) -> None:
+    if metadata is None:
+        return
+    active_compdb = metadata.get("active_compdb")
+    active_profile = metadata.get("active_profile")
+    adapter = metadata.get("adapter")
+    if isinstance(active_compdb, str):
+        context.active_compdb = active_compdb
+    if isinstance(active_profile, str) or active_profile is None:
+        context.active_profile = active_profile
+    if isinstance(adapter, str):
+        context.adapter = adapter
+
+
 def start(args, context: ExecutionContext) -> CommandResult:
     root = _project_root(args, context)
     cache_dir = daemon_dir(root)
@@ -54,6 +68,7 @@ def start(args, context: ExecutionContext) -> CommandResult:
     metadata_path = daemon_metadata_path(root)
     metadata = load_metadata(root)
     if metadata is not None and metadata_is_live(metadata):
+        _apply_metadata_context(context, metadata)
         return CommandResult(
             command="daemon",
             status="ok",
@@ -123,6 +138,7 @@ def status(args, context: ExecutionContext) -> CommandResult:
     metadata = load_metadata(root)
     if metadata is not None:
         live = metadata_is_live(metadata)
+        _apply_metadata_context(context, metadata)
     payload = {
         "kind": "daemon",
         "action": "status",
@@ -138,6 +154,7 @@ def status(args, context: ExecutionContext) -> CommandResult:
 def stop(args, context: ExecutionContext) -> CommandResult:
     root = _project_root(args, context)
     metadata = load_metadata(root)
+    _apply_metadata_context(context, metadata)
     stopped = False
     if metadata is not None:
         stopped = stop_metadata_process(metadata)
