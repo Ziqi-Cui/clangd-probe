@@ -1,15 +1,15 @@
 # clangd-probe
 
-Agent-friendly command-line front-end for `clangd`.
+`clangd-probe` is an agent-friendly command-line front-end for `clangd`.
 
 `clangd-probe` is a terminal-first wrapper around real `clangd` and real
 `compile_commands.json` data. It is built for coding agents and humans who need
 reliable semantic navigation from the shell without scraping editor state.
 
-## What It Is
+## Why Use It
 
-`clangd-probe` keeps the actual language server in the loop, but adds a more
-automation-friendly contract on top:
+`clangd-probe` keeps the actual language server in the loop, but gives it a
+cleaner CLI contract:
 
 - stable JSON envelopes with explicit `status`, `diagnostics`, and `results`
 - non-zero exit codes for command errors
@@ -24,36 +24,67 @@ It is useful when an agent needs to answer questions like:
 - what does clangd think this location means?
 - can I reuse a warm semantic session instead of cold-starting `clangd` each time?
 
-## Why It Matters
-
-Compared with calling `clangd` directly, this wrapper gives agents a cleaner CLI
-surface:
-
-- `env` makes discovery state explicit before deeper semantic calls
-- `check` turns parse viability into a stable command contract
-- semantic commands can take either a location or a symbol query
-- daemon-backed routing makes repeated symbol work much faster
-- failures are structured instead of relying on raw stderr parsing
-
 ## Install
+
+Requirements:
+
+- Python 3.10+
+- `clangd` on `PATH`
+- a usable `compile_commands.json` for the target repository
+
+### Local development install
 
 ```bash
 python3 -m pip install -e .
 ```
 
-Python module entrypoint:
+### Install directly from GitHub
 
 ```bash
-python3 -m clangd_probe --help
+python3 -m pip install "git+https://github.com/Ziqi-Cui/clangd-probe.git"
 ```
 
-CLI entrypoint:
+### Entrypoints
+
+Console script:
 
 ```bash
 clangd-probe --help
 ```
 
-## Agent Contract
+Module form:
+
+```bash
+python3 -m clangd_probe --help
+```
+
+## Quick Start
+
+Validate discovery and parse viability first:
+
+```bash
+clangd-probe env --project . --json
+clangd-probe check path/to/file.cpp --project . --json
+```
+
+Then use semantic commands on a known-good file or location:
+
+```bash
+clangd-probe def path/to/file.cpp:120:7 --project . --json
+clangd-probe hover path/to/file.cpp:120:7 --project . --json
+clangd-probe refs path/to/file.cpp:120:7 --project . --json
+```
+
+For repeated symbol queries, use the warm daemon:
+
+```bash
+clangd-probe up --project . --json
+clangd-probe ps --project . --json
+clangd-probe find MySymbol --project . --daemon required --json --limit 10
+clangd-probe down --project . --json
+```
+
+## Automation Contract
 
 For automation and agent use:
 
@@ -86,16 +117,17 @@ Exit behavior:
 - command errors exit non-zero
 - parse/CLI errors also exit non-zero
 
-## Quick Start
+Compared with calling `clangd` directly, this wrapper adds:
 
-Start with discovery and parse viability:
+- explicit discovery with `env`
+- parse viability checks with `check`
+- location-or-symbol entrypoints for semantic commands
+- daemon-backed routing for repeated symbol work
+- structured failures instead of raw stderr scraping
 
-```bash
-clangd-probe env --project . --json
-clangd-probe check path/to/file.cpp --project . --json
-```
+## Common Flows
 
-Then move into semantic queries:
+### Definition / Hover / References From A Location
 
 ```bash
 clangd-probe def path/to/file.cpp:120:7 --project . --json
@@ -103,18 +135,18 @@ clangd-probe hover path/to/file.cpp:120:7 --project . --json
 clangd-probe refs path/to/file.cpp:120:7 --project . --json
 ```
 
-For repeated symbol queries, use the warm daemon:
+### Symbol Query With A Warm Daemon
 
 ```bash
 clangd-probe up --project . --json
-clangd-probe find Variable --project . --daemon required --json --limit 10
-clangd-probe def Variable::next --project . --daemon required --json
-clangd-probe hover Variable::next --project . --daemon required --json
-clangd-probe refs Variable::next --project . --daemon required --json
+clangd-probe find MySymbol --project . --daemon required --json --limit 10
+clangd-probe def MyNamespace::MySymbol --project . --daemon required --json
+clangd-probe hover MyNamespace::MySymbol --project . --daemon required --json
+clangd-probe refs MyNamespace::MySymbol --project . --daemon required --json
 clangd-probe down --project . --json
 ```
 
-Module-form fallback remains available:
+### Module-Form Fallback
 
 ```bash
 python3 -m clangd_probe daemon start --project .
@@ -180,4 +212,5 @@ choosing commands ad hoc.
 
 ## Examples
 
-See [docs/examples.md](./docs/examples.md) for end-to-end examples.
+- [docs/examples.md](./docs/examples.md)
+- [docs/production.md](./docs/production.md)
