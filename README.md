@@ -38,7 +38,7 @@ surface:
 ## Install
 
 ```bash
-python3 -m pip install -e tools/clangd_probe
+python3 -m pip install -e .
 ```
 
 Python module entrypoint:
