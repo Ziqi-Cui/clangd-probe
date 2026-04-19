@@ -4,12 +4,14 @@
 
 `clangd-probe` is a terminal-first wrapper around real `clangd` and real
 `compile_commands.json` data. It is built for coding agents and humans who need
-reliable semantic navigation from the shell without scraping editor state.
+reliable C/C++ semantic navigation from the shell without scraping editor state.
+It provides a small CLI and JSON contract on top of the clangd language server
+protocol (LSP) workflow for code intelligence, symbol lookup, and automation.
 
 ## Why Use It
 
-`clangd-probe` keeps the actual language server in the loop, but gives it a
-cleaner CLI contract:
+`clangd-probe` keeps the actual language server in the loop, but gives AI
+agents and shell automation a cleaner CLI contract:
 
 - stable JSON envelopes with explicit `status`, `diagnostics`, and `results`
 - non-zero exit codes for command errors
