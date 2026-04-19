@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "clangd-probe"
+version = "0.1.0"
+description = "CLI front-end for clangd navigation workflows"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{name = "OpenAI Codex"}]
+
+[project.scripts]
+clangd-probe = "clangd_probe.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/clangd_probe"]
+
+[tool.pytest.ini_options]
+markers = [
+  "live: opt-in tests that require a real clangd binary and local environment setup",
+]
